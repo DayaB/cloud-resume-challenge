@@ -1,0 +1,258 @@
+{
+  "Description": "YIT: Trent - Lab Infrastructure",
+  "Outputs": {
+    "ApiEndpoint": {
+      "Description": "Endpoint for this stage of the api",
+      "Value": {
+        "Fn::Join": [
+          "",
+          [
+            "https://",
+            {
+              "Ref": "api"
+            },
+            ".execute-api.us-west-2.amazonaws.com/",
+            "v1"
+          ]
+        ]
+      }
+    },
+    "ApiKey": {
+      "Description": "API key",
+      "Value": {
+        "Ref": "ApiKey"
+      }
+    },
+    "TableName": {
+      "Description": "Table name of the newly create DynamoDB table",
+      "Value": {
+        "Ref": "myDynamoDBTable"
+      }
+    }
+  },
+  "Resources": {
+    "ApiKey": {
+      "Properties": {
+        "StageKeys": [
+          {
+            "RestApiId": {
+              "Ref": "api"
+            },
+            "StageName": {
+              "Ref": "v1Stage"
+            }
+          }
+        ]
+      },
+      "Type": "AWS::ApiGateway::ApiKey"
+    },
+    "LambdaExecutionRole": {
+      "Properties": {
+        "AssumeRolePolicyDocument": {
+          "Statement": [
+            {
+              "Action": [
+                "sts:AssumeRole"
+              ],
+              "Effect": "Allow",
+              "Principal": {
+                "Service": [
+                  "lambda.amazonaws.com",
+                  "apigateway.amazonaws.com"
+                ]
+              }
+            }
+          ],
+          "Version": "2012-10-17"
+        },
+        "Path": "/",
+        "Policies": [
+          {
+            "PolicyDocument": {
+              "Statement": [
+                {
+                  "Action": [
+                    "logs:*"
+                  ],
+                  "Effect": "Allow",
+                  "Resource": "arn:aws:logs:*:*:*"
+                },
+                {
+                  "Action": [
+                    "lambda:*"
+                  ],
+                  "Effect": "Allow",
+                  "Resource": "*"
+                }
+              ],
+              "Version": "2012-10-17"
+            },
+            "PolicyName": "root"
+          }
+        ]
+      },
+      "Type": "AWS::IAM::Role"
+    },
+    "LambdaMethod": {
+      "DependsOn": "function",
+      "Properties": {
+        "AuthorizationType": "NONE",
+        "HttpMethod": "GET",
+        "Integration": {
+          "Credentials": {
+            "Fn::GetAtt": [
+              "LambdaExecutionRole",
+              "Arn"
+            ]
+          },
+          "IntegrationHttpMethod": "POST",
+          "IntegrationResponses": [
+            {
+              "StatusCode": "200"
+            }
+          ],
+          "Type": "AWS",
+          "Uri": {
+            "Fn::Join": [
+              "",
+              [
+                "arn:aws:apigateway:us-west-2:lambda:path/2015-03-31/functions/",
+                {
+                  "Fn::GetAtt": [
+                    "function",
+                    "Arn"
+                  ]
+                },
+                "/invocations"
+              ]
+            ]
+          }
+        },
+        "MethodResponses": [
+          {
+            "StatusCode": "200"
+          }
+        ],
+        "ResourceId": {
+          "Ref": "resource"
+        },
+        "RestApiId": {
+          "Ref": "api"
+        }
+      },
+      "Type": "AWS::ApiGateway::Method"
+    },
+    "api": {
+      "Properties": {
+        "Name": "production-a-cloudresumechallenge"
+      },
+      "Type": "AWS::ApiGateway::RestApi"
+    },
+    "bucket": {
+      "Properties": {
+        "BucketName": "trentnielsen.me",
+        "PublicAccessBlockConfiguration": {
+          "BlockPublicAcls": "true",
+          "BlockPublicPolicy": "true",
+          "IgnorePublicAcls": "true",
+          "RestrictPublicBuckets": "true"
+        },
+        "Tags": [
+          {
+            "Key": "Business",
+            "Value": "YIT"
+          },
+          {
+            "Key": "Lab",
+            "Value": "True"
+          }
+        ]
+      },
+      "Type": "AWS::S3::Bucket"
+    },
+    "function": {
+      "Properties": {
+        "Code": {
+          "ZipFile": {
+            "Fn::Join": [
+              "",
+              [
+                "var response = require('cfn-response');",
+                "exports.handler = function(event, context) {",
+                "   context.succeed('foobar!');",
+                "   return 'foobar!';",
+                "};"
+              ]
+            ]
+          }
+        },
+        "Handler": "index.handler",
+        "Role": {
+          "Fn::GetAtt": [
+            "LambdaExecutionRole",
+            "Arn"
+          ]
+        },
+        "Runtime": "python3.7"
+      },
+      "Type": "AWS::Lambda::Function"
+    },
+    "myDynamoDBTable": {
+      "Properties": {
+        "AttributeDefinitions": [
+          {
+            "AttributeName": "counters",
+            "AttributeType": "N"
+          }
+        ],
+        "KeySchema": [
+          {
+            "AttributeName": "counters",
+            "KeyType": "HASH"
+          }
+        ],
+        "ProvisionedThroughput": {
+          "ReadCapacityUnits": 1,
+          "WriteCapacityUnits": 1
+        }
+      },
+      "Type": "AWS::DynamoDB::Table"
+    },
+    "resource": {
+      "Properties": {
+        "ParentId": {
+          "Fn::GetAtt": [
+            "api",
+            "RootResourceId"
+          ]
+        },
+        "PathPart": "dynamo",
+        "RestApiId": {
+          "Ref": "api"
+        }
+      },
+      "Type": "AWS::ApiGateway::Resource"
+    },
+    "v1Deployment": {
+      "DependsOn": "LambdaMethod",
+      "Properties": {
+        "RestApiId": {
+          "Ref": "api"
+        }
+      },
+      "Type": "AWS::ApiGateway::Deployment"
+    },
+    "v1Stage": {
+      "Properties": {
+        "DeploymentId": {
+          "Ref": "v1Deployment"
+        },
+        "RestApiId": {
+          "Ref": "api"
+        },
+        "StageName": "v1"
+      },
+      "Type": "AWS::ApiGateway::Stage"
+    }
+  }
+}
