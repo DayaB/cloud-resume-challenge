@@ -75,7 +75,11 @@ def handler(event, context):
         print('ERROR: No value returned, update failed')
     return {
         'statusCode': 200,
-        'body': json.dumps('Updating website: resume.trentnielsen.me counter value from {} to {}'.format(visitors, visitors + 1))
+        'headers': {
+            'Content-Type': 'application/json',
+            'Access-Control-Allow-Origin': '*'
+            },
+        'body': str(visitors)
     }
 
 
