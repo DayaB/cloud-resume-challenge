@@ -33,11 +33,11 @@ def save_to_file(template, settings_file_path='./template.json'):
             json.dump(template, outfile, indent=2)
 
 
-app_group = "Cloud-Resume-Challenge"
+app_group = "Trent-Lab-Cloud-Resume-Challenge"
 app_group_l = app_group.lower()
 app_group_ansi = app_group_l.replace("-", "")
 cfront_zone_id = 'Z2FDTNDATAQYW2'
-env = 'Staging'
+env = 'Staging-A'
 env_l = env.lower()
 
 # Create Default Tags
@@ -55,9 +55,11 @@ hashkeyname = 'counters'
 # Table data type (N is for number/integer)
 hashkeytype = 'N'
 
+dns_domain = 'trentnielsen.me'
+
 # Prepare Template
 t = Template()
-t.set_description('YIT: Trent - Cloud Resume Challenge')
+t.set_description('YIT: {}'.format(app_group))
 
 #####################################################################################################################
 # CloudFront and S3 for static hosting
@@ -254,7 +256,7 @@ for src_domain, domain_info in redirect_domains.items():
 #####################################################################################################################
 rest_api = t.add_resource(RestApi(
     "api",
-    Name="production-a-cloudresumechallenge"
+    Name="{}-{}".format(env_l, app_group_l)
 ))
 
 #####################################################################################################################
@@ -262,6 +264,7 @@ rest_api = t.add_resource(RestApi(
 #####################################################################################################################
 myDynamoDB = t.add_resource(Table(
     "myDynamoDBTable",
+    TableName='counters',
     AttributeDefinitions=[
         AttributeDefinition(
             AttributeName='website',
@@ -321,7 +324,7 @@ t.add_resource(Role(
                     "dynamodb:PutItem",
                     "dynamodb:UpdateItem"
                 ],
-                "Resource": "{}".format(GetAtt(myDynamoDB, 'Arn'))
+                "Resource": GetAtt('myDynamoDBTable', 'Arn')
                 }]
         })],
     AssumeRolePolicyDocument={"Version": "2012-10-17", "Statement": [
@@ -400,14 +403,19 @@ stage = t.add_resource(Stage(
     DeploymentId=Ref(deployment)
 ))
 
-key = t.add_resource(ApiKey(
-    "ApiKey",
-    StageKeys=[StageKey(
-        RestApiId=Ref(rest_api),
-        StageName=Ref(stage)
-    )]
+# Create cname record for all mount points
+apiCname = t.add_resource(RecordSetType(
+    'apiCname',
+    HostedZoneName='{}.'.format(dns_domain),
+    Comment="{} API gateway domain record".format(app_group_l),
+    Name='{}.{}'.format('api', dns_domain),
+    Type="CNAME",
+    TTL="900",
+    ResourceRecords=[Join("", [
+            Ref(rest_api),
+            ".execute-api.us-east-1.amazonaws.com"
+        ])]
 ))
-
 
 #####################################################################################################################
 # Output
@@ -424,11 +432,6 @@ t.add_output([
             stage_name
         ]),
         Description="Endpoint for this stage of the api"
-    ),
-    Output(
-        "ApiKey",
-        Value=Ref(key),
-        Description="API key"
     ),
 ])
 # DynamoDB outputs

@@ -1,5 +1,5 @@
 {
-  "Description": "YIT: Trent - Cloud Resume Challenge",
+  "Description": "YIT: Trent-Lab-Cloud-Resume-Challenge",
   "Outputs": {
     "ApiEndpoint": {
       "Description": "Endpoint for this stage of the api",
@@ -15,12 +15,6 @@
             "v1"
           ]
         ]
-      }
-    },
-    "ApiKey": {
-      "Description": "API key",
-      "Value": {
-        "Ref": "ApiKey"
       }
     },
     "CDNDomainOutputresume0trentnielsen0me": {
@@ -40,21 +34,6 @@
     }
   },
   "Resources": {
-    "ApiKey": {
-      "Properties": {
-        "StageKeys": [
-          {
-            "RestApiId": {
-              "Ref": "api"
-            },
-            "StageName": {
-              "Ref": "v1Stage"
-            }
-          }
-        ]
-      },
-      "Type": "AWS::ApiGateway::ApiKey"
-    },
     "LambdaExecutionRole": {
       "Properties": {
         "AssumeRolePolicyDocument": {
@@ -104,7 +83,12 @@
                     "dynamodb:UpdateItem"
                   ],
                   "Effect": "Allow",
-                  "Resource": "<troposphere.GetAtt object at 0x1036f8d90>"
+                  "Resource": {
+                    "Fn::GetAtt": [
+                      "myDynamoDBTable",
+                      "Arn"
+                    ]
+                  }
                 }
               ],
               "Version": "2012-10-17"
@@ -166,12 +150,35 @@
     },
     "api": {
       "Properties": {
-        "Name": "production-a-cloudresumechallenge"
+        "Name": "staging-a-trent-lab-cloud-resume-challenge"
       },
       "Type": "AWS::ApiGateway::RestApi"
     },
+    "apiCname": {
+      "Properties": {
+        "Comment": "trent-lab-cloud-resume-challenge API gateway domain record",
+        "HostedZoneName": "trentnielsen.me.",
+        "Name": "api.trentnielsen.me",
+        "ResourceRecords": [
+          {
+            "Fn::Join": [
+              "",
+              [
+                {
+                  "Ref": "api"
+                },
+                ".execute-api.us-east-1.amazonaws.com"
+              ]
+            ]
+          }
+        ],
+        "TTL": "900",
+        "Type": "CNAME"
+      },
+      "Type": "AWS::Route53::RecordSet"
+    },
     "cdnCertificateresume0trentnielsen0me": {
-      "DependsOn": "cloudresumechallenge0resume0trentnielsen0me0Bucket",
+      "DependsOn": "trentlabcloudresumechallenge0resume0trentnielsen0me0Bucket",
       "Properties": {
         "DomainName": "resume.trentnielsen.me",
         "DomainValidationOptions": [
@@ -194,7 +201,7 @@
           },
           {
             "Key": "Name",
-            "Value": "staging-cloud-resume-challenge"
+            "Value": "staging-a-trent-lab-cloud-resume-challenge"
           }
         ],
         "ValidationMethod": "DNS"
@@ -209,7 +216,7 @@
             "resume.trentnielsen.me",
             "www.resume.trentnielsen.me"
           ],
-          "Comment": "Staging - resume.trentnielsen.me",
+          "Comment": "Staging-A - resume.trentnielsen.me",
           "CustomErrorResponses": [
             {
               "ErrorCachingMinTTL": "0",
@@ -261,7 +268,7 @@
             "MaxTTL": 31536000,
             "MinTTL": 0,
             "SmoothStreaming": "false",
-            "TargetOriginId": "staging-cloud-resume-challenge-resume.trentnielsen.me",
+            "TargetOriginId": "staging-a-trent-lab-cloud-resume-challenge-resume.trentnielsen.me",
             "ViewerProtocolPolicy": "redirect-to-https"
           },
           "Enabled": "true",
@@ -284,7 +291,7 @@
                       "//",
                       {
                         "Fn::GetAtt": [
-                          "cloudresumechallenge0resume0trentnielsen0me0Bucket",
+                          "trentlabcloudresumechallenge0resume0trentnielsen0me0Bucket",
                           "WebsiteURL"
                         ]
                       }
@@ -292,7 +299,7 @@
                   }
                 ]
               },
-              "Id": "staging-cloud-resume-challenge-resume.trentnielsen.me"
+              "Id": "staging-a-trent-lab-cloud-resume-challenge-resume.trentnielsen.me"
             }
           ],
           "PriceClass": "PriceClass_All",
@@ -316,101 +323,6 @@
         ]
       },
       "Type": "AWS::CloudFront::Distribution"
-    },
-    "cloudresumechallenge0resume0trentnielsen0me0Bucket": {
-      "Properties": {
-        "BucketName": "resume.trentnielsen.me",
-        "Tags": [
-          {
-            "Key": "Business",
-            "Value": "YIT"
-          },
-          {
-            "Key": "Lab",
-            "Value": "True"
-          },
-          {
-            "Key": "Component",
-            "Value": "resume.trentnielsen.me"
-          }
-        ],
-        "WebsiteConfiguration": {
-          "IndexDocument": "index.html"
-        }
-      },
-      "Type": "AWS::S3::Bucket"
-    },
-    "cloudresumechallengeresume0trentnielsen0meAAAAdns": {
-      "Properties": {
-        "AliasTarget": {
-          "DNSName": {
-            "Fn::GetAtt": [
-              "cdnDistributionresume0trentnielsen0me",
-              "DomainName"
-            ]
-          },
-          "HostedZoneId": "Z2FDTNDATAQYW2"
-        },
-        "Comment": "resume.trentnielsen.me domain record",
-        "HostedZoneName": "trentnielsen.me.",
-        "Name": "resume.trentnielsen.me",
-        "Type": "AAAA"
-      },
-      "Type": "AWS::Route53::RecordSet"
-    },
-    "cloudresumechallengeresume0trentnielsen0meAdns": {
-      "Properties": {
-        "AliasTarget": {
-          "DNSName": {
-            "Fn::GetAtt": [
-              "cdnDistributionresume0trentnielsen0me",
-              "DomainName"
-            ]
-          },
-          "HostedZoneId": "Z2FDTNDATAQYW2"
-        },
-        "Comment": "resume.trentnielsen.me domain record",
-        "HostedZoneName": "trentnielsen.me.",
-        "Name": "resume.trentnielsen.me",
-        "Type": "A"
-      },
-      "Type": "AWS::Route53::RecordSet"
-    },
-    "cloudresumechallengeresume0trentnielsen0meAlternativeAAAAdns": {
-      "Properties": {
-        "AliasTarget": {
-          "DNSName": {
-            "Fn::GetAtt": [
-              "cdnDistributionresume0trentnielsen0me",
-              "DomainName"
-            ]
-          },
-          "HostedZoneId": "Z2FDTNDATAQYW2"
-        },
-        "Comment": "www.resume.trentnielsen.me domain record",
-        "HostedZoneName": "trentnielsen.me.",
-        "Name": "www.resume.trentnielsen.me",
-        "Type": "AAAA"
-      },
-      "Type": "AWS::Route53::RecordSet"
-    },
-    "cloudresumechallengeresume0trentnielsen0meAlternativeAdns": {
-      "Properties": {
-        "AliasTarget": {
-          "DNSName": {
-            "Fn::GetAtt": [
-              "cdnDistributionresume0trentnielsen0me",
-              "DomainName"
-            ]
-          },
-          "HostedZoneId": "Z2FDTNDATAQYW2"
-        },
-        "Comment": "www.resume.trentnielsen.me domain record",
-        "HostedZoneName": "trentnielsen.me.",
-        "Name": "www.resume.trentnielsen.me",
-        "Type": "A"
-      },
-      "Type": "AWS::Route53::RecordSet"
     },
     "function": {
       "Properties": {
@@ -456,7 +368,8 @@
         "ProvisionedThroughput": {
           "ReadCapacityUnits": 5,
           "WriteCapacityUnits": 5
-        }
+        },
+        "TableName": "counters"
       },
       "Type": "AWS::DynamoDB::Table"
     },
@@ -474,6 +387,101 @@
         }
       },
       "Type": "AWS::ApiGateway::Resource"
+    },
+    "trentlabcloudresumechallenge0resume0trentnielsen0me0Bucket": {
+      "Properties": {
+        "BucketName": "resume.trentnielsen.me",
+        "Tags": [
+          {
+            "Key": "Business",
+            "Value": "YIT"
+          },
+          {
+            "Key": "Lab",
+            "Value": "True"
+          },
+          {
+            "Key": "Component",
+            "Value": "resume.trentnielsen.me"
+          }
+        ],
+        "WebsiteConfiguration": {
+          "IndexDocument": "index.html"
+        }
+      },
+      "Type": "AWS::S3::Bucket"
+    },
+    "trentlabcloudresumechallengeresume0trentnielsen0meAAAAdns": {
+      "Properties": {
+        "AliasTarget": {
+          "DNSName": {
+            "Fn::GetAtt": [
+              "cdnDistributionresume0trentnielsen0me",
+              "DomainName"
+            ]
+          },
+          "HostedZoneId": "Z2FDTNDATAQYW2"
+        },
+        "Comment": "resume.trentnielsen.me domain record",
+        "HostedZoneName": "trentnielsen.me.",
+        "Name": "resume.trentnielsen.me",
+        "Type": "AAAA"
+      },
+      "Type": "AWS::Route53::RecordSet"
+    },
+    "trentlabcloudresumechallengeresume0trentnielsen0meAdns": {
+      "Properties": {
+        "AliasTarget": {
+          "DNSName": {
+            "Fn::GetAtt": [
+              "cdnDistributionresume0trentnielsen0me",
+              "DomainName"
+            ]
+          },
+          "HostedZoneId": "Z2FDTNDATAQYW2"
+        },
+        "Comment": "resume.trentnielsen.me domain record",
+        "HostedZoneName": "trentnielsen.me.",
+        "Name": "resume.trentnielsen.me",
+        "Type": "A"
+      },
+      "Type": "AWS::Route53::RecordSet"
+    },
+    "trentlabcloudresumechallengeresume0trentnielsen0meAlternativeAAAAdns": {
+      "Properties": {
+        "AliasTarget": {
+          "DNSName": {
+            "Fn::GetAtt": [
+              "cdnDistributionresume0trentnielsen0me",
+              "DomainName"
+            ]
+          },
+          "HostedZoneId": "Z2FDTNDATAQYW2"
+        },
+        "Comment": "www.resume.trentnielsen.me domain record",
+        "HostedZoneName": "trentnielsen.me.",
+        "Name": "www.resume.trentnielsen.me",
+        "Type": "AAAA"
+      },
+      "Type": "AWS::Route53::RecordSet"
+    },
+    "trentlabcloudresumechallengeresume0trentnielsen0meAlternativeAdns": {
+      "Properties": {
+        "AliasTarget": {
+          "DNSName": {
+            "Fn::GetAtt": [
+              "cdnDistributionresume0trentnielsen0me",
+              "DomainName"
+            ]
+          },
+          "HostedZoneId": "Z2FDTNDATAQYW2"
+        },
+        "Comment": "www.resume.trentnielsen.me domain record",
+        "HostedZoneName": "trentnielsen.me.",
+        "Name": "www.resume.trentnielsen.me",
+        "Type": "A"
+      },
+      "Type": "AWS::Route53::RecordSet"
     },
     "v1Deployment": {
       "DependsOn": "LambdaMethod",

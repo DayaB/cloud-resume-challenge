@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 import boto3
 import json
 from botocore.exceptions import ClientError
@@ -10,34 +9,6 @@ dynamodb = boto3.resource('dynamodb')
 
 # Variables
 tablename = 'counters'
-
-
-def create_dynamo_table(tablename):
-    # Create the DynamoDB table
-    try:
-        table = dynamodb.create_table(
-            TableName=tablename,
-            KeySchema=[
-                {
-                    'AttributeName': 'website',
-                    'KeyType': 'HASH'
-                }
-            ],
-            AttributeDefinitions=[
-                {
-                    'AttributeName': 'website',
-                    'AttributeType': 'S'
-                }
-            ],
-            ProvisionedThroughput={
-                'ReadCapacityUnits': 5,
-                'WriteCapacityUnits': 5
-            }
-        )
-        table.meta.client.get_waiter('table_exists').wait(TableName=tablename)
-
-    except:
-        pass
 
 
 def get_visitors_counter(tablename):
@@ -94,20 +65,17 @@ def update_table_counters(tablename, value):
     except ClientError as e:
         return e.response['Error']['Message']
 
-def delete_table(tablename):
+def handler(event, context):
+    put_table_counters('counters', 0)
+    visitors = get_visitors_counter('counters')
+    print('Printing visitors count: {}'.format(visitors))
     try:
-        table = dynamodb.Table(tablename)
-        response = table.delete(tablename)
-    except:
-        return 'error'
+        update_table_counters('counters', visitors + 1)
+    except TypeError:
+        print('ERROR: No value returned, update failed')
+    return {
+        'statusCode': 200,
+        'body': json.dumps('Updating website: resume.trentnielsen.me counter value from {} to {}'.format(visitors, visitors + 1))
+    }
 
 
-#create_dynamo_table('counters')
-# Set the value of 0 of the key counters
-put_table_counters('counters', 0)
-visitors = get_visitors_counter('counters')
-print('Printing visitors count: {}'.format(visitors))
-try:
-    update_table_counters('counters', visitors + 1)
-except TypeError:
-    print('ERROR: No value returned, update failed')
