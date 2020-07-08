@@ -122,6 +122,11 @@ section:last-child {
 	width: 72.5%;
 }
 
+.sectionCounter {
+	float: right;
+	font-size: 8px;
+}
+
 .sectionTitle h1 {
 	font-family: 'Rokkitt', Helvetica, Arial, sans-serif;
 	font-style: italic;

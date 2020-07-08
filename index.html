@@ -37,12 +37,13 @@
 	</div>
 	
 	<div id="mainArea" class="quickFade delayFive">
+
 		<section>
 			<article>
 				<div class="sectionTitle">
-					<h1>Personal Profile</h1>
+					<h1>About Me</h1>
 				</div>
-				
+
 				<div class="sectionContent">
 					<p>IT Engineer with over ten years of experience, specializing in infrastructure automation, CI/CD ownership and AWS deployments. </p>
 				</div>
@@ -136,11 +137,16 @@
 			</div>
 			<div class="clear"></div>
 		</section>
-	</div>
+
+		<section>
+			<article>
+				<div class="sectionCounter">
+					<b id="count"></b>
+				</div>
+			</article>
+			<div class="clear"></div>
+		</section>
 </body>
-<p>This page has
-<h1 id="count"></h1>
-views</p>
 </html>
 <script>
 const url='https://rpb22xl112.execute-api.us-east-1.amazonaws.com/v1/dynamo';
@@ -155,5 +161,6 @@ return fetch(url)
   .catch(error => console.warn(error));
 }
 
-get_counter_value().then(response => document.getElementById("count").innerHTML = response);
+var text = "You are visitor number: "
+get_counter_value().then(response => document.getElementById("count").innerHTML = text.concat(response));
 </script>
