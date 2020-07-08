@@ -4,8 +4,7 @@ import json
 from pathlib import Path
 
 import troposphere.s3 as s3
-from troposphere import Template, GetAtt, Join, Ref, Output
-from troposphere import Tags
+from troposphere import Template, GetAtt, Join, Ref, Output, Select, Split
 from troposphere.apigateway import RestApi, Method
 from troposphere.apigateway import Resource, MethodResponse
 from troposphere.apigateway import Integration, IntegrationResponse
@@ -15,10 +14,10 @@ from troposphere.iam import Role, Policy
 from troposphere.awslambda import Function, Code
 from troposphere.dynamodb import (KeySchema, AttributeDefinition, ProvisionedThroughput)
 from troposphere.dynamodb import Table
-from troposphere.cloudfront import Distribution, DistributionConfig
-from troposphere.cloudfront import Origin, DefaultCacheBehavior
-from troposphere.cloudfront import ForwardedValues
-from troposphere.cloudfront import S3OriginConfig
+from troposphere.s3 import *
+import troposphere.cloudfront as cf
+from troposphere.certificatemanager import Certificate, DomainValidationOption
+from troposphere.route53 import RecordSetType, AliasTarget
 
 # Function that saves the file , but makes sure it exists first.
 def save_to_file(template, settings_file_path='./template.json'):
@@ -32,6 +31,14 @@ def save_to_file(template, settings_file_path='./template.json'):
             os.utime(settings_file_path, None)
         with open(settings_file_path, 'w+') as outfile:
             json.dump(template, outfile, indent=2)
+
+
+app_group = "Resume-Challenge"
+app_group_l = app_group.lower()
+app_group_ansi = app_group_l.replace("-", "")
+cfront_zone_id = 'Z2FDTNDATAQYW2'
+env = 'Staging'
+env_l = env.lower()
 
 # Create Default Tags
 DefaultTags = Tags(Business='YIT') + \
@@ -50,59 +57,187 @@ hashkeytype = 'N'
 
 # Prepare Template
 t = Template()
-t.set_description('YIT: Trent - Lab Infrastructure')
+t.set_description('YIT: Trent - Cloud Resume Challenge')
 
 #####################################################################################################################
-# S3 Bucket for Backups
+# CloudFront and S3 for static hosting
 #####################################################################################################################
-bucket = t.add_resource(s3.Bucket(
-    'bucket',
-    BucketName='trentnielsen.me',
-    Tags=DefaultTags,
-    PublicAccessBlockConfiguration=s3.PublicAccessBlockConfiguration(
-        BlockPublicAcls=True,
-        BlockPublicPolicy=True,
-        IgnorePublicAcls=True,
-        RestrictPublicBuckets=True,
-    ),
-    WebsiteConfiguration=(s3.WebsiteConfiguration(
-        IndexDocument='index.html'
+
+redirect_domains = {
+    'resume.trentnielsen.me': {
+        'zone_name': 'trentnielsen.me',
+        'redirect_target': 'resume.trentnielsen.me',
+        'alt_sub': 'www',
+    },
+}
+
+for src_domain, domain_info in redirect_domains.items():
+
+    bucketResourceName = "{}0{}0Bucket".format(app_group_ansi, src_domain.replace('.', '0'))
+
+    redirectBucket = t.add_resource(Bucket(
+        bucketResourceName,
+        BucketName='{}'.format(src_domain),
+        Tags=DefaultTags + Tags(Component='{}'.format(src_domain)),
+        WebsiteConfiguration=(s3.WebsiteConfiguration(
+            IndexDocument='index.html'
+        ))
     ))
-))
 
-#####################################################################################################################
-# DNS record for the resume file
-#####################################################################################################################
-dnsRecord = t.add_resource(RecordSetType(
-                    'dnsrecord',
-                    HostedZoneName='trentnielsen.me',
-                    Comment='CF generated hostname for cloud resume challenge',
-                    Name='resume.trentnielsen.me',
-                    Type="A",
-                    TTL="600",
-                    ResourceRecords=[GetAtt(bucket, 'DomainName')],
-                ))
+    # Set some cdn based values and defaults
+    dns_domain = domain_info['zone_name']
+    cdn_domain = '{}'.format(src_domain)
+    max_ttl = 31536000,
+    default_ttl = 86400,
 
-#####################################################################################################################
-# CloudFront
-#####################################################################################################################
-distribution = t.add_resource(Distribution(
-    "distribution",
-    DistributionConfig=DistributionConfig(
-        Origins=[Origin(Id="Origin 1", DomainName=Ref(dnsRecord),
-                        S3OriginConfig=S3OriginConfig())],
-        DefaultCacheBehavior=DefaultCacheBehavior(
-            TargetOriginId="Origin 1",
-            ForwardedValues=ForwardedValues(
-                QueryString=False
-            ),
-            ViewerProtocolPolicy="allow-all"),
-        Enabled=True,
-        HttpVersion='http2'
+    # If an alt_sub domain is not specified use empty string
+    if domain_info['alt_sub'] != '':
+        alternate_name = '{}.{}'.format(domain_info['alt_sub'], src_domain)
+    else:
+        alternate_name = ''
+
+    # Provision certificate for CDN
+    cdnCertificate = t.add_resource(Certificate(
+        'cdnCertificate{}'.format(src_domain.replace('.', '0')),
+        DomainName=cdn_domain,
+        SubjectAlternativeNames=[alternate_name],
+        DomainValidationOptions=[DomainValidationOption(
+            DomainName=cdn_domain,
+            ValidationDomain=dns_domain
+        )],
+        ValidationMethod='DNS',
+        Tags=DefaultTags + Tags(Name='{}-{}'.format(env_l, app_group_l))
+    ))
+
+    # Provision the CDN Origin
+    cdnOrigin = cf.Origin(
+        Id='{}-{}-{}'.format(env_l, app_group_l, src_domain),
+        DomainName=Select(1, Split('//', GetAtt(redirectBucket, 'WebsiteURL'))),
+        CustomOriginConfig=cf.CustomOriginConfig(
+            HTTPPort=80,
+            HTTPSPort=443,
+            OriginProtocolPolicy='http-only',
+            OriginSSLProtocols=['TLSv1.2'],
+        )
     )
-))
 
+    # Provision the CDN Distribution
+    cdnDistribution = t.add_resource(cf.Distribution(
+        'cdnDistribution{}'.format(src_domain.replace('.', '0')),
+        DependsOn=bucketResourceName,
+        DistributionConfig=cf.DistributionConfig(
+            Comment='{} - {}'.format(env, cdn_domain),
+            Enabled=True,
+            PriceClass='PriceClass_All',
+            HttpVersion='http2',
+            Origins=[
+                cdnOrigin,
+            ],
+            Aliases=[cdn_domain, alternate_name],
+            ViewerCertificate=cf.ViewerCertificate(
+                AcmCertificateArn=Ref(cdnCertificate),
+                SslSupportMethod='sni-only',
+                MinimumProtocolVersion='TLSv1.2_2018',
+            ),
+            DefaultCacheBehavior=cf.DefaultCacheBehavior(
+                AllowedMethods=['GET', 'HEAD', 'OPTIONS'],
+                CachedMethods=['GET', 'HEAD'],
+                ViewerProtocolPolicy='redirect-to-https',
+                TargetOriginId='{}-{}-{}'.format(env_l, app_group_l, src_domain),
+                ForwardedValues=cf.ForwardedValues(
+                    Headers=[
+                        "Accept-Encoding"
+                    ],
+                    QueryString=True,
+                ),
+                MinTTL=0,
+                MaxTTL=int(max_ttl[0]),
+                DefaultTTL=int(default_ttl[0]),
+                SmoothStreaming=False,
+                Compress=True
+            ),
+            CustomErrorResponses=[
+                cf.CustomErrorResponse(
+                    ErrorCachingMinTTL='0',
+                    ErrorCode='403',
+                ),
+                cf.CustomErrorResponse(
+                    ErrorCachingMinTTL='0',
+                    ErrorCode='404',
+                ),
+                cf.CustomErrorResponse(
+                    ErrorCachingMinTTL='0',
+                    ErrorCode='500',
+                ),
+                cf.CustomErrorResponse(
+                    ErrorCachingMinTTL='0',
+                    ErrorCode='501',
+                ),
+                cf.CustomErrorResponse(
+                    ErrorCachingMinTTL='0',
+                    ErrorCode='502',
+                ),
+                cf.CustomErrorResponse(
+                    ErrorCachingMinTTL='0',
+                    ErrorCode='503',
+                ),
+                cf.CustomErrorResponse(
+                    ErrorCachingMinTTL='0',
+                    ErrorCode='504',
+                ),
+            ],
+        ),
+        Tags=DefaultTags
+    ))
 
+    cdnARecord = t.add_resource(RecordSetType(
+        "{}{}Adns".format(app_group_ansi, src_domain.replace('.', '0')),
+        HostedZoneName='{}.'.format(dns_domain),
+        Comment="{} domain record".format(cdn_domain),
+        Name='{}'.format(cdn_domain),
+        Type="A",
+        AliasTarget=AliasTarget(
+            HostedZoneId=cfront_zone_id,
+            DNSName=GetAtt(cdnDistribution, "DomainName")
+        )
+    ))
+
+    cdnAAAARecord = t.add_resource(RecordSetType(
+        "{}{}AAAAdns".format(app_group_ansi, src_domain.replace('.', '0')),
+        HostedZoneName='{}.'.format(dns_domain),
+        Comment="{} domain record".format(cdn_domain),
+        Name='{}'.format(cdn_domain),
+        Type="AAAA",
+        AliasTarget=AliasTarget(
+            HostedZoneId=cfront_zone_id,
+            DNSName=GetAtt(cdnDistribution, "DomainName")
+        )
+    ))
+
+    if domain_info['alt_sub'] != '':
+        cdnAlternativeARecord = t.add_resource(RecordSetType(
+            "{}{}AlternativeAdns".format(app_group_ansi, src_domain.replace('.', '0')),
+            HostedZoneName='{}.'.format(dns_domain),
+            Comment="{} domain record".format(alternate_name),
+            Name='{}'.format(alternate_name),
+            Type="A",
+            AliasTarget=AliasTarget(
+                HostedZoneId=cfront_zone_id,
+                DNSName=GetAtt(cdnDistribution, "DomainName")
+            )
+        ))
+
+        cdnAlternativeAAAARecord = t.add_resource(RecordSetType(
+            "{}{}AlternativeAAAAdns".format(app_group_ansi, src_domain.replace('.', '0')),
+            HostedZoneName='{}.'.format(dns_domain),
+            Comment="{} domain record".format(alternate_name),
+            Name='{}'.format(alternate_name),
+            Type="AAAA",
+            AliasTarget=AliasTarget(
+                HostedZoneId=cfront_zone_id,
+                DNSName=GetAtt(cdnDistribution, "DomainName")
+            )
+        ))
 
 #####################################################################################################################
 # API Gateway
