@@ -33,7 +33,7 @@ def save_to_file(template, settings_file_path='./template.json'):
             json.dump(template, outfile, indent=2)
 
 
-app_group = "Resume-Challenge"
+app_group = "Cloud-Resume-Challenge"
 app_group_l = app_group.lower()
 app_group_ansi = app_group_l.replace("-", "")
 cfront_zone_id = 'Z2FDTNDATAQYW2'
@@ -48,8 +48,8 @@ DefaultTags = Tags(Business='YIT') + \
 stage_name = 'v1'
 
 ##### Dynamo Variables
-readunits = 1
-writeunits = 1
+readunits = 5
+writeunits = 5
 # The name of the table
 hashkeyname = 'counters'
 # Table data type (N is for number/integer)
@@ -100,6 +100,7 @@ for src_domain, domain_info in redirect_domains.items():
     cdnCertificate = t.add_resource(Certificate(
         'cdnCertificate{}'.format(src_domain.replace('.', '0')),
         DomainName=cdn_domain,
+        DependsOn=redirectBucket,
         SubjectAlternativeNames=[alternate_name],
         DomainValidationOptions=[DomainValidationOption(
             DomainName=cdn_domain,
@@ -124,7 +125,7 @@ for src_domain, domain_info in redirect_domains.items():
     # Provision the CDN Distribution
     cdnDistribution = t.add_resource(cf.Distribution(
         'cdnDistribution{}'.format(src_domain.replace('.', '0')),
-        DependsOn=bucketResourceName,
+        DependsOn='cdnCertificate{}'.format(src_domain.replace('.', '0')),
         DistributionConfig=cf.DistributionConfig(
             Comment='{} - {}'.format(env, cdn_domain),
             Enabled=True,
@@ -239,12 +240,44 @@ for src_domain, domain_info in redirect_domains.items():
             )
         ))
 
+        # Redirect outputs
+        t.add_output([
+            Output(
+                'CDNDomainOutput{}'.format(src_domain.replace('.', '0')),
+                Description="Domain for CDN",
+                Value=GetAtt(cdnDistribution, 'DomainName'),
+            )
+        ])
+
 #####################################################################################################################
 # API Gateway
 #####################################################################################################################
 rest_api = t.add_resource(RestApi(
     "api",
     Name="production-a-cloudresumechallenge"
+))
+
+#####################################################################################################################
+# DynamoDB table
+#####################################################################################################################
+myDynamoDB = t.add_resource(Table(
+    "myDynamoDBTable",
+    AttributeDefinitions=[
+        AttributeDefinition(
+            AttributeName='website',
+            AttributeType='S'
+        )
+    ],
+    KeySchema=[
+        KeySchema(
+            AttributeName='website',
+            KeyType='HASH'
+        )
+    ],
+    ProvisionedThroughput=ProvisionedThroughput(
+        ReadCapacityUnits=readunits,
+        WriteCapacityUnits=writeunits
+    )
 ))
 
 #####################################################################################################################
@@ -271,11 +304,25 @@ t.add_resource(Role(
                 "Action": ["logs:*"],
                 "Resource": "arn:aws:logs:*:*:*",
                 "Effect": "Allow"
-            }, {
+            },
+                {
                 "Action": ["lambda:*"],
                 "Resource": "*",
                 "Effect": "Allow"
-            }]
+                },
+                {
+                "Effect": "Allow",
+                "Action": [
+                    "dynamodb:BatchGetItem",
+                    "dynamodb:GetItem",
+                    "dynamodb:Query",
+                    "dynamodb:Scan",
+                    "dynamodb:BatchWriteItem",
+                    "dynamodb:PutItem",
+                    "dynamodb:UpdateItem"
+                ],
+                "Resource": "{}".format(GetAtt(myDynamoDB, 'Arn'))
+                }]
         })],
     AssumeRolePolicyDocument={"Version": "2012-10-17", "Statement": [
         {
@@ -327,7 +374,7 @@ method = t.add_resource(Method(
             )
         ],
         Uri=Join("", [
-            "arn:aws:apigateway:us-west-2:lambda:path/2015-03-31/functions/",
+            "arn:aws:apigateway:us-east-1:lambda:path/2015-03-31/functions/",
             GetAtt("function", "Arn"),
             "/invocations"
         ])
@@ -361,28 +408,6 @@ key = t.add_resource(ApiKey(
     )]
 ))
 
-#####################################################################################################################
-# DynamoDB table
-#####################################################################################################################
-myDynamoDB = t.add_resource(Table(
-    "myDynamoDBTable",
-    AttributeDefinitions=[
-        AttributeDefinition(
-            AttributeName=hashkeyname,
-            AttributeType=hashkeytype
-        ),
-    ],
-    KeySchema=[
-        KeySchema(
-            AttributeName=hashkeyname,
-            KeyType="HASH"
-        )
-    ],
-    ProvisionedThroughput=ProvisionedThroughput(
-        ReadCapacityUnits=readunits,
-        WriteCapacityUnits=writeunits
-    )
-))
 
 #####################################################################################################################
 # Output
@@ -395,7 +420,7 @@ t.add_output([
         Value=Join("", [
             "https://",
             Ref(rest_api),
-            ".execute-api.us-west-2.amazonaws.com/",
+            ".execute-api.us-east-1.amazonaws.com/",
             stage_name
         ]),
         Description="Endpoint for this stage of the api"
