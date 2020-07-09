@@ -1,5 +1,10 @@
 name: Sync Bucket
-on: push
+on:
+  push:
+    branches:
+      - master
+    paths:
+      - 'website/*'
 
 jobs:
   deploy_index:
