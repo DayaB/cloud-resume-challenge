@@ -358,41 +358,9 @@ resource = t.add_resource(Resource(
     ParentId=GetAtt("api", "RootResourceId"),
 ))
 
-## Create a get method for the API gateway
-#getmethod = t.add_resource(Method(
-#    "getmethod",
-#    DependsOn='function',
-#    RestApiId=Ref(rest_api),
-#    AuthorizationType="NONE",
-#    ResourceId=Ref(resource),
-#    HttpMethod="GET",
-#    Integration=Integration(
-#        Credentials=GetAtt("LambdaExecutionRole", "Arn"),
-#        Type="AWS",
-#        IntegrationHttpMethod='POST',
-#        IntegrationResponses=[
-#            IntegrationResponse(
-#                StatusCode='200'
-#            )
-#        ],
-#        Uri=Join("", [
-#            "arn:aws:apigateway:us-east-1:lambda:path/2015-03-31/functions/",
-#            GetAtt("function", "Arn"),
-#            "/invocations"
-#        ])
-#    ),
-#    MethodResponses=[
-#        MethodResponse(
-#            "CatResponse",
-#            StatusCode='200'
-#        )
-#    ]
-#))
-
-# Create an OPTIONS method for the API gateway for CORS
-optionsmethod = t.add_resource(Method(
-    "optionsmethod",
-    #DependsOn='getmethod',
+# Create a get method that integrates into Lambda
+getmethod = t.add_resource(Method(
+    "getmethod",
     RestApiId=Ref(rest_api),
     AuthorizationType="NONE",
     ResourceId=Ref(resource),
@@ -417,11 +385,6 @@ optionsmethod = t.add_resource(Method(
                 ResponseTemplates={
                     'application/json': ''
                 },
-               # ResponseParameters={
-               #     'method.response.header.Access-Control-Allow-Headers': "'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token'",
-               #     'method.response.header.Access-Control-Allow-Methods': "'GET,OPTIONS'",
-               #     'method.response.header.Access-Control-Allow-Origin': "'*'"
-               # },
             )
         ],
         Uri=Join("", [

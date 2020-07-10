@@ -302,29 +302,7 @@
       },
       "Type": "AWS::Lambda::Function"
     },
-    "myDynamoDBTable": {
-      "Properties": {
-        "AttributeDefinitions": [
-          {
-            "AttributeName": "website",
-            "AttributeType": "S"
-          }
-        ],
-        "KeySchema": [
-          {
-            "AttributeName": "website",
-            "KeyType": "HASH"
-          }
-        ],
-        "ProvisionedThroughput": {
-          "ReadCapacityUnits": 5,
-          "WriteCapacityUnits": 5
-        },
-        "TableName": "counters"
-      },
-      "Type": "AWS::DynamoDB::Table"
-    },
-    "optionsmethod": {
+    "getmethod": {
       "Properties": {
         "AuthorizationType": "NONE",
         "HttpMethod": "GET",
@@ -381,6 +359,28 @@
         }
       },
       "Type": "AWS::ApiGateway::Method"
+    },
+    "myDynamoDBTable": {
+      "Properties": {
+        "AttributeDefinitions": [
+          {
+            "AttributeName": "website",
+            "AttributeType": "S"
+          }
+        ],
+        "KeySchema": [
+          {
+            "AttributeName": "website",
+            "KeyType": "HASH"
+          }
+        ],
+        "ProvisionedThroughput": {
+          "ReadCapacityUnits": 5,
+          "WriteCapacityUnits": 5
+        },
+        "TableName": "counters"
+      },
+      "Type": "AWS::DynamoDB::Table"
     },
     "resource": {
       "Properties": {
