@@ -20,7 +20,7 @@ jobs:
           aws-region: ${{ secrets.AWS_REGION }}
       - name: Deploy App Stack
         id: deploy
-        uses: alexjurkiewicz/cfn-deploy@v2.0.1
+        uses: tnielsen2/cfn-deploy@v2.1.0
         with:
           stackName: trent-lab
           templateFile: cloudformation/template.json
