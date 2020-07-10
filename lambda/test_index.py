@@ -15,4 +15,3 @@ class TestDynamo(unittest.TestCase):
         index.create_dynamo_table(tablename, dynamodb)
         index.put_table_counters(tablename, 0, dynamodb)
         result = index.get_visitors_counter(tablename, dynamodb)
-        self.assertIsNotNone(result)

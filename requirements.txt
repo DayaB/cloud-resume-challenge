@@ -1,5 +1,3 @@
-placebo
 boto3
 troposphere
-dynamodb-mapper
 moto

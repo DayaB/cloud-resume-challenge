@@ -11,9 +11,20 @@ jobs:
   deploy-lambda:
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@master
-    - run: cd lambda && zip lambda.zip index.py
-    - uses: yvesgurcan/deploy-lambda-function@master
+    - name: Checkout the code
+      uses: actions/checkout@master
+    - name: Configure Python
+      uses: actions/setup-python@v1
+      with:
+        python-version: ${{ matrix.ptyhon-version }}
+    - name: Install deps
+      run: |
+        python -m pip install --upgrade pip
+                  pip install -r requirements.txt
+    - name: Zip lambda
+      run: cd lambda && zip lambda.zip index.py
+    - name: Upload to AWS
+      uses: yvesgurcan/deploy-lambda-function@master
       with:
         package: ./lambda/lambda.zip
         function-name: trent-lab-function-17WZBUUQ30VQH
