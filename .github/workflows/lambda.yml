@@ -20,8 +20,8 @@ jobs:
         architecture: 'x64'
     - name: Install deps
       run: |
-        python -m pip3 install --upgrade pip
-                  pip3 install -r requirements.txt
+        python -m pip install --upgrade pip
+                  pip install -r requirements.txt
     - name: Run unit tests
       run: |
         python3 -m unittest lambda/test_index.py
