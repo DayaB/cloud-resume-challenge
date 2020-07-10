@@ -480,6 +480,7 @@ t.add_output([
         Description="Endpoint for this stage of the api"
     ),
 ])
+
 # DynamoDB outputs
 t.add_output(Output(
     "TableName",
