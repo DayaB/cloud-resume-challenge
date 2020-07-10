@@ -11,7 +11,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@master
-    - run: zip lambda.zip lambda/index.py
+    - run: zip -r lambda.zip lambda/index.py
     - uses: yvesgurcan/deploy-lambda-function@master
       with:
         package: lambda.zip
