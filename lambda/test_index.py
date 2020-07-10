@@ -23,14 +23,14 @@ class TestDynamo(unittest.TestCase):
         print('Inserted value of {} into the table'.format(randominterger))
         # Get the value of the table
         result = index.get_visitors_counter(tablename, dynamodb)
-        print('Retreived value of {} from table "{}"'.format(result, tablename))
+        print('Retreived value of {} from table'.format(result))
         # Assert the result of the put matches the random integer
         self.assertEqual(randominterger, result)
         # Update the table
         index.update_table_counters(tablename, randominterger + 1, dynamodb)
         # Get the new value
         result = index.get_visitors_counter(tablename, dynamodb)
-        print('Retreived updated value of {} from table {}'.format(result, tablename))
+        print('Retreived updated value of {}'.format(result))
         self.assertEqual(randominterger + 1, result)
 
 
