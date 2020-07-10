@@ -5,6 +5,7 @@ on:
       - master
     paths:
       - 'lambda/*'
+      - '.github/workflows/lambda.yml'
 
 jobs:
   deploy-lambda:
