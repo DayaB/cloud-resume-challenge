@@ -17,13 +17,11 @@ jobs:
         with:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-region: us-east-1
+          aws-region: ${{ secrets.AWS_REGION }}
       - name: Deploy App Stack
         id: deploy
         uses: alexjurkiewicz/cfn-deploy@v2.0.1
         with:
           stackName: trent-lab
           templateFile: cloudformation/template.json
-      - name: Print App Outputs
-        run: echo ${{ steps.deploy.outputs }}
 
