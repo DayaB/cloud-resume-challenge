@@ -12,7 +12,7 @@ class TestDynamo(unittest.TestCase):
         # Set up a mock dynamodb using ddbmock
         tablename = 'unittest'
         dynamodb = boto3.resource('dynamodb', 'us-east-1')
-        index.create_dynamo_table(tablename)
-        index.put_table_counters(tablename, 0)
-        result = index.get_visitors_counter(tablename)
+        index.create_dynamo_table(tablename, dynamodb)
+        index.put_table_counters(tablename, 0, dynamodb)
+        result = index.get_visitors_counter(tablename, dynamodb)
         self.assertIsNotNone(result)

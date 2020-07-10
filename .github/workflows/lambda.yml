@@ -12,7 +12,7 @@ jobs:
     steps:
     - uses: actions/checkout@master
     - run: zip lambda.zip lambda/index.py
-    - uses: yvesgurcan/deploy-lambda-function@mastert
+    - uses: yvesgurcan/deploy-lambda-function@master
       with:
         package: lambda.zip
         function-name: trent-lab-function-17WZBUUQ30VQH
