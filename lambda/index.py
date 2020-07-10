@@ -7,7 +7,7 @@ from decimal import Decimal
 # Get the service resource.
 dynamodb = boto3.resource('dynamodb')
 
-# Variables
+# Variables 
 tablename = 'counters'
 
 
