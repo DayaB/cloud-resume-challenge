@@ -391,7 +391,7 @@ optionsmethod = t.add_resource(Method(
                 },
                 ResponseParameters={
                     'method.response.header.Access-Control-Allow-Headers': "'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token'",
-                    'method.response.header.Access-Control-Allow-Methods': "'OPTIONS'",
+                    #'method.response.header.Access-Control-Allow-Methods': "'OPTIONS'",
                     'method.response.header.Access-Control-Allow-Origin': "'*'"
                 },
             )
