@@ -12,6 +12,7 @@ dynamodb = boto3.resource('dynamodb')
 # Variables
 tablename = 'counters'
 
+
 # Function to create a dynamoDB table
 def create_dynamo_table(tablename, connection):
     # Create the DynamoDB table
@@ -40,6 +41,7 @@ def create_dynamo_table(tablename, connection):
     except:
         pass
 
+
 def get_visitors_counter(tablename, connection):
     table = connection.Table(tablename)
     # Read it and print the output
@@ -60,7 +62,7 @@ def get_visitors_counter(tablename, connection):
 def put_table_counters(tablename, value, connection):
     table = connection.Table(tablename)
     try:
-        get_visitors_counter(tablename)
+        get_visitors_counter(tablename, connection)
     except IndexError:
         try:
             response = table.put_item(
@@ -94,6 +96,7 @@ def update_table_counters(tablename, value, connection):
     except ClientError as e:
         return e.response['Error']['Message']
 
+
 def handler(event, context):
     put_table_counters('counters', 0, dynamodb)
     visitors = get_visitors_counter('counters', dynamodb)
@@ -107,8 +110,6 @@ def handler(event, context):
         'headers': {
             'Content-Type': 'application/json',
             'Access-Control-Allow-Origin': '*'
-            },
+        },
         'body': str(visitors)
     }
-
-
