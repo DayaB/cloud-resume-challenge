@@ -127,6 +127,11 @@ section:last-child {
 	font-size: 8px;
 }
 
+.abouthisresume {
+	float: left;
+	font-size: 8px;
+}
+
 .sectionTitle h1 {
 	font-family: 'Rokkitt', Helvetica, Arial, sans-serif;
 	font-style: italic;
