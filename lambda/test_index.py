@@ -19,11 +19,11 @@ class TestDynamo(unittest.TestCase):
         index.create_dynamo_table(tablename, dynamodb)
         print('Table "{}" successfully created.'.format(tablename))
         # Put default value into the table
-        index.put_table_counters(tablename, 0, dynamodb)
+        index.put_table_counters(tablename, randominterger, dynamodb)
         print('Inserted value of {} into the table'.format(randominterger))
         # Get the value of the table
         result = index.get_visitors_counter(tablename, dynamodb)
-        print('Retreived value of {} from table {}'.format(result, tablename))
+        print('Retreived value of {} from table "{}"'.format(result, tablename))
         # Assert the result of the put matches the random integer
         self.assertEqual(randominterger, result)
         # Update the table
