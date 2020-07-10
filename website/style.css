@@ -130,6 +130,7 @@ section:last-child {
 .abouthisresume {
 	float: left;
 	font-size: 8px;
+	text-decoration: none;
 }
 
 .sectionTitle h1 {
