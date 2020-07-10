@@ -105,29 +105,6 @@
       },
       "Type": "AWS::ApiGateway::RestApi"
     },
-    "apiCname": {
-      "Properties": {
-        "Comment": "trent-lab-cloud-resume-challenge API gateway domain record",
-        "HostedZoneName": "trentnielsen.me.",
-        "Name": "api.trentnielsen.me",
-        "ResourceRecords": [
-          {
-            "Fn::Join": [
-              "",
-              [
-                {
-                  "Ref": "api"
-                },
-                ".execute-api.us-east-1.amazonaws.com"
-              ]
-            ]
-          }
-        ],
-        "TTL": "900",
-        "Type": "CNAME"
-      },
-      "Type": "AWS::Route53::RecordSet"
-    },
     "cdnCertificateresume0trentnielsen0me": {
       "DependsOn": "trentlabcloudresumechallenge0resume0trentnielsen0me0Bucket",
       "Properties": {
