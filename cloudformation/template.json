@@ -302,55 +302,6 @@
       },
       "Type": "AWS::Lambda::Function"
     },
-    "getmethod": {
-      "DependsOn": "function",
-      "Properties": {
-        "AuthorizationType": "NONE",
-        "HttpMethod": "GET",
-        "Integration": {
-          "Credentials": {
-            "Fn::GetAtt": [
-              "LambdaExecutionRole",
-              "Arn"
-            ]
-          },
-          "IntegrationHttpMethod": "POST",
-          "IntegrationResponses": [
-            {
-              "StatusCode": "200"
-            }
-          ],
-          "Type": "AWS",
-          "Uri": {
-            "Fn::Join": [
-              "",
-              [
-                "arn:aws:apigateway:us-east-1:lambda:path/2015-03-31/functions/",
-                {
-                  "Fn::GetAtt": [
-                    "function",
-                    "Arn"
-                  ]
-                },
-                "/invocations"
-              ]
-            ]
-          }
-        },
-        "MethodResponses": [
-          {
-            "StatusCode": "200"
-          }
-        ],
-        "ResourceId": {
-          "Ref": "resource"
-        },
-        "RestApiId": {
-          "Ref": "api"
-        }
-      },
-      "Type": "AWS::ApiGateway::Method"
-    },
     "myDynamoDBTable": {
       "Properties": {
         "AttributeDefinitions": [
@@ -374,10 +325,9 @@
       "Type": "AWS::DynamoDB::Table"
     },
     "optionsmethod": {
-      "DependsOn": "getmethod",
       "Properties": {
         "AuthorizationType": "NONE",
-        "HttpMethod": "OPTIONS",
+        "HttpMethod": "GET",
         "Integration": {
           "Credentials": {
             "Fn::GetAtt": [
@@ -398,7 +348,7 @@
           "RequestTemplates": {
             "application/json": "{\"statusCode\": 200}"
           },
-          "Type": "MOCK",
+          "Type": "AWS",
           "Uri": {
             "Fn::Join": [
               "",

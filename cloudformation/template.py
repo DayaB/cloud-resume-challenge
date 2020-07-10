@@ -358,45 +358,45 @@ resource = t.add_resource(Resource(
     ParentId=GetAtt("api", "RootResourceId"),
 ))
 
-# Create a get method for the API gateway
-getmethod = t.add_resource(Method(
-    "getmethod",
-    DependsOn='function',
-    RestApiId=Ref(rest_api),
-    AuthorizationType="NONE",
-    ResourceId=Ref(resource),
-    HttpMethod="GET",
-    Integration=Integration(
-        Credentials=GetAtt("LambdaExecutionRole", "Arn"),
-        Type="AWS",
-        IntegrationHttpMethod='POST',
-        IntegrationResponses=[
-            IntegrationResponse(
-                StatusCode='200'
-            )
-        ],
-        Uri=Join("", [
-            "arn:aws:apigateway:us-east-1:lambda:path/2015-03-31/functions/",
-            GetAtt("function", "Arn"),
-            "/invocations"
-        ])
-    ),
-    MethodResponses=[
-        MethodResponse(
-            "CatResponse",
-            StatusCode='200'
-        )
-    ]
-))
+## Create a get method for the API gateway
+#getmethod = t.add_resource(Method(
+#    "getmethod",
+#    DependsOn='function',
+#    RestApiId=Ref(rest_api),
+#    AuthorizationType="NONE",
+#    ResourceId=Ref(resource),
+#    HttpMethod="GET",
+#    Integration=Integration(
+#        Credentials=GetAtt("LambdaExecutionRole", "Arn"),
+#        Type="AWS",
+#        IntegrationHttpMethod='POST',
+#        IntegrationResponses=[
+#            IntegrationResponse(
+#                StatusCode='200'
+#            )
+#        ],
+#        Uri=Join("", [
+#            "arn:aws:apigateway:us-east-1:lambda:path/2015-03-31/functions/",
+#            GetAtt("function", "Arn"),
+#            "/invocations"
+#        ])
+#    ),
+#    MethodResponses=[
+#        MethodResponse(
+#            "CatResponse",
+#            StatusCode='200'
+#        )
+#    ]
+#))
 
 # Create an OPTIONS method for the API gateway for CORS
 optionsmethod = t.add_resource(Method(
     "optionsmethod",
-    DependsOn='getmethod',
+    #DependsOn='getmethod',
     RestApiId=Ref(rest_api),
     AuthorizationType="NONE",
     ResourceId=Ref(resource),
-    HttpMethod="OPTIONS",
+    HttpMethod="GET",
     MethodResponses=[
         MethodResponse(
             "CatResponse",
@@ -409,7 +409,7 @@ optionsmethod = t.add_resource(Method(
     Integration=Integration(
         Credentials=GetAtt("LambdaExecutionRole", "Arn"),
         PassthroughBehavior='WHEN_NO_MATCH',
-        Type="MOCK",
+        Type="AWS",
         IntegrationHttpMethod='POST',
         IntegrationResponses=[
             IntegrationResponse(
