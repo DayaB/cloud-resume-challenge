@@ -449,20 +449,6 @@ stage = t.add_resource(Stage(
     DeploymentId=Ref(deployment)
 ))
 
-# Create cname record for all mount points
-apiCname = t.add_resource(RecordSetType(
-    'apiCname',
-    HostedZoneName='{}.'.format(dns_domain),
-    Comment="{} API gateway domain record".format(app_group_l),
-    Name='{}.{}'.format('api', dns_domain),
-    Type="CNAME",
-    TTL="900",
-    ResourceRecords=[Join("", [
-            Ref(rest_api),
-            ".execute-api.us-east-1.amazonaws.com"
-        ])]
-))
-
 #####################################################################################################################
 # Output
 #####################################################################################################################
