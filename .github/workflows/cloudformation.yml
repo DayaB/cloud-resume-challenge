@@ -11,7 +11,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@master
-    - run: python3 cloudformation/template.py
+    - run: pip3 install requirements.txt && python3 cloudformation/template.py
     - uses: aws-actions/aws-cloudformation-github-deploy@v1
       with:
         name: trent-lab

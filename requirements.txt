@@ -1,0 +1,2 @@
+pathlib
+troposphere==2.6.1
