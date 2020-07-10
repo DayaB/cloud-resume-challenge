@@ -99,55 +99,6 @@
       },
       "Type": "AWS::IAM::Role"
     },
-    "LambdaMethod": {
-      "DependsOn": "function",
-      "Properties": {
-        "AuthorizationType": "NONE",
-        "HttpMethod": "GET",
-        "Integration": {
-          "Credentials": {
-            "Fn::GetAtt": [
-              "LambdaExecutionRole",
-              "Arn"
-            ]
-          },
-          "IntegrationHttpMethod": "POST",
-          "IntegrationResponses": [
-            {
-              "StatusCode": "200"
-            }
-          ],
-          "Type": "AWS",
-          "Uri": {
-            "Fn::Join": [
-              "",
-              [
-                "arn:aws:apigateway:us-east-1:lambda:path/2015-03-31/functions/",
-                {
-                  "Fn::GetAtt": [
-                    "function",
-                    "Arn"
-                  ]
-                },
-                "/invocations"
-              ]
-            ]
-          }
-        },
-        "MethodResponses": [
-          {
-            "StatusCode": "200"
-          }
-        ],
-        "ResourceId": {
-          "Ref": "resource"
-        },
-        "RestApiId": {
-          "Ref": "api"
-        }
-      },
-      "Type": "AWS::ApiGateway::Method"
-    },
     "api": {
       "Properties": {
         "Name": "staging-a-trent-lab-cloud-resume-challenge"
@@ -351,6 +302,55 @@
       },
       "Type": "AWS::Lambda::Function"
     },
+    "getmethod": {
+      "DependsOn": "function",
+      "Properties": {
+        "AuthorizationType": "NONE",
+        "HttpMethod": "GET",
+        "Integration": {
+          "Credentials": {
+            "Fn::GetAtt": [
+              "LambdaExecutionRole",
+              "Arn"
+            ]
+          },
+          "IntegrationHttpMethod": "POST",
+          "IntegrationResponses": [
+            {
+              "StatusCode": "200"
+            }
+          ],
+          "Type": "AWS",
+          "Uri": {
+            "Fn::Join": [
+              "",
+              [
+                "arn:aws:apigateway:us-east-1:lambda:path/2015-03-31/functions/",
+                {
+                  "Fn::GetAtt": [
+                    "function",
+                    "Arn"
+                  ]
+                },
+                "/invocations"
+              ]
+            ]
+          }
+        },
+        "MethodResponses": [
+          {
+            "StatusCode": "200"
+          }
+        ],
+        "ResourceId": {
+          "Ref": "resource"
+        },
+        "RestApiId": {
+          "Ref": "api"
+        }
+      },
+      "Type": "AWS::ApiGateway::Method"
+    },
     "myDynamoDBTable": {
       "Properties": {
         "AttributeDefinitions": [
@@ -372,6 +372,70 @@
         "TableName": "counters"
       },
       "Type": "AWS::DynamoDB::Table"
+    },
+    "optionsmethod": {
+      "DependsOn": "function",
+      "Properties": {
+        "AuthorizationType": "NONE",
+        "HttpMethod": "OPTIONS",
+        "Integration": {
+          "Credentials": {
+            "Fn::GetAtt": [
+              "LambdaExecutionRole",
+              "Arn"
+            ]
+          },
+          "IntegrationHttpMethod": "POST",
+          "IntegrationResponses": [
+            {
+              "ResponseParameters": {
+                "method.response.header.Access-Control-Allow-Headers": "'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token'",
+                "method.response.header.Access-Control-Allow-Methods": "'GET,OPTIONS'",
+                "method.response.header.Access-Control-Allow-Origin": "'*'"
+              },
+              "ResponseTemplates": {
+                "application/json": ""
+              },
+              "StatusCode": "200"
+            }
+          ],
+          "PassthroughBehavior": "WHEN_NO_MATCH",
+          "RequestTemplates": {
+            "application/json": "{\"statusCode\": 200}"
+          },
+          "Type": "MOCK",
+          "Uri": {
+            "Fn::Join": [
+              "",
+              [
+                "arn:aws:apigateway:us-east-1:lambda:path/2015-03-31/functions/",
+                {
+                  "Fn::GetAtt": [
+                    "function",
+                    "Arn"
+                  ]
+                },
+                "/invocations"
+              ]
+            ]
+          }
+        },
+        "MethodResponses": [
+          {
+            "ResponseModels": {
+              "application/json": "Empty"
+            },
+            "StatusCode": "200"
+          }
+        ],
+        "ResourceId": {
+          "Ref": "resource"
+        },
+        "RestApiId": {
+          "Ref": "api"
+        }
+      },
+      "Type": "AWS::ApiGateway::Method"
     },
     "resource": {
       "Properties": {

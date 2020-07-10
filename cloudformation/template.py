@@ -9,7 +9,6 @@ from troposphere.apigateway import RestApi, Method
 from troposphere.apigateway import Resource, MethodResponse
 from troposphere.apigateway import Integration, IntegrationResponse
 from troposphere.apigateway import Deployment, Stage
-from troposphere.apigateway import ApiKey, StageKey
 from troposphere.iam import Role, Policy
 from troposphere.awslambda import Function, Code
 from troposphere.dynamodb import (KeySchema, AttributeDefinition, ProvisionedThroughput)
@@ -20,7 +19,7 @@ from troposphere.certificatemanager import Certificate, DomainValidationOption
 from troposphere.route53 import RecordSetType, AliasTarget
 
 # Function that saves the file , but makes sure it exists first.
-def save_to_file(template, settings_file_path='./template.json'):
+def save_to_file(template, settings_file_path='./cloudformation/template.json'):
     # Create settings file if it doesn't exist:
     settings_file = Path(settings_file_path)
     if settings_file.is_file():
@@ -359,9 +358,9 @@ resource = t.add_resource(Resource(
     ParentId=GetAtt("api", "RootResourceId"),
 ))
 
-# Create a Lambda API method for the Lambda resource
-method = t.add_resource(Method(
-    "LambdaMethod",
+# Create a get method for the API gateway
+getmethod = t.add_resource(Method(
+    "getmethod",
     DependsOn='function',
     RestApiId=Ref(rest_api),
     AuthorizationType="NONE",
@@ -388,6 +387,53 @@ method = t.add_resource(Method(
             StatusCode='200'
         )
     ]
+))
+
+# Create an OPTIONS method for the API gateway for CORS
+optionsmethod = t.add_resource(Method(
+    "optionsmethod",
+    DependsOn='function',
+    RestApiId=Ref(rest_api),
+    AuthorizationType="NONE",
+    ResourceId=Ref(resource),
+    HttpMethod="OPTIONS",
+    MethodResponses=[
+        MethodResponse(
+            "CatResponse",
+            StatusCode='200',
+            ResponseModels={
+                'application/json': 'Empty'
+            }
+        )
+    ],
+    Integration=Integration(
+        Credentials=GetAtt("LambdaExecutionRole", "Arn"),
+        PassthroughBehavior='WHEN_NO_MATCH',
+        Type="MOCK",
+        IntegrationHttpMethod='POST',
+        IntegrationResponses=[
+            IntegrationResponse(
+                StatusCode='200',
+                ResponseTemplates={
+                    'application/json': ''
+                },
+                ResponseParameters={
+                    'method.response.header.Access-Control-Allow-Headers': "'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token'",
+                    'method.response.header.Access-Control-Allow-Methods': "'GET,OPTIONS'",
+                    'method.response.header.Access-Control-Allow-Origin': "'*'"
+                },
+            )
+        ],
+        Uri=Join("", [
+            "arn:aws:apigateway:us-east-1:lambda:path/2015-03-31/functions/",
+            GetAtt("function", "Arn"),
+            "/invocations"
+        ]),
+
+        RequestTemplates={
+            'application/json': '{"statusCode": 200}'
+        },
+    ),
 ))
 
 deployment = t.add_resource(Deployment(
