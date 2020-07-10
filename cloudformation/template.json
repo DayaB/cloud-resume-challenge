@@ -302,7 +302,6 @@
       "Type": "AWS::DynamoDB::Table"
     },
     "optionsmethod": {
-      "DependsOn": "getmethod",
       "Properties": {
         "AuthorizationType": "NONE",
         "HttpMethod": "OPTIONS",

@@ -364,7 +364,7 @@ resource = t.add_resource(Resource(
 # Create an OPTIONS method for the API gateway for CORS
 optionsmethod = t.add_resource(Method(
     "optionsmethod",
-    DependsOn='getmethod',
+    #DependsOn='getmethod',
     RestApiId=Ref(rest_api),
     AuthorizationType="NONE",
     ResourceId=Ref(resource),
