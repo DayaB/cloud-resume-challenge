@@ -21,6 +21,9 @@ jobs:
       run: |
         python -m pip install --upgrade pip
                   pip install -r requirements.txt
+    - name: Run unit tests
+      run: |
+        python3 -m unittest lambda/test_index.py
     - name: Zip lambda
       run: cd lambda && zip lambda.zip index.py
     - name: Upload to AWS
