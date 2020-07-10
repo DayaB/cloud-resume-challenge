@@ -1,0 +1,21 @@
+name: Update Lambda
+on:
+  push:
+    branches:
+      - master
+    paths:
+      - 'lambda/*'
+
+jobs:
+  deploy-lambda:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@master
+    - run: zip lambda.zip lambda/index.py
+    - uses: yvesgurcan/deploy-lambda-function
+      with:
+        package: lambda.zip
+        function-name: trent-lab-function-17WZBUUQ30VQH
+        AWS_REGION: ${{ secrets.AWS_REGION }}
+        AWS_SECRET_ID: ${{ secrets.AWS_SECRET_ID }}
+        AWS_SECRET_KEY: ${{ secrets.AWS_SECRET_KEY }}

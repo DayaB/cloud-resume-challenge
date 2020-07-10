@@ -1,0 +1,19 @@
+name: Update Stack
+on:
+  push:
+    branches:
+      - master
+    paths:
+      - 'cloudformation/*'
+
+jobs:
+  deploy-cloudformation:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: aws-actions/aws-cloudformation-github-deploy@v1
+      with:
+        name: trent-lab
+        template: cloudformation/template.json
+        AWS_REGION: ${{ secrets.AWS_REGION }}
+        AWS_SECRET_ID: ${{ secrets.AWS_SECRET_ID }}
+        AWS_SECRET_KEY: ${{ secrets.AWS_SECRET_KEY }}
