@@ -4,10 +4,11 @@ from botocore.exceptions import ClientError
 from boto3.dynamodb.conditions import Key
 from decimal import Decimal
 
+# This file was uploaded with Github Actions!
 # Get the service resource.
 dynamodb = boto3.resource('dynamodb')
 
-# Variables    
+# Variables
 tablename = 'counters'
 
 
