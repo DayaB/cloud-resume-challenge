@@ -105,6 +105,29 @@
       },
       "Type": "AWS::ApiGateway::RestApi"
     },
+    "apiCname": {
+      "Properties": {
+        "Comment": "trent-lab-cloud-resume-challenge API gateway domain record",
+        "HostedZoneName": "trentnielsen.me.",
+        "Name": "api.trentnielsen.me",
+        "ResourceRecords": [
+          {
+            "Fn::Join": [
+              "",
+              [
+                {
+                  "Ref": "api"
+                },
+                ".execute-api.us-east-1.amazonaws.com"
+              ]
+            ]
+          }
+        ],
+        "TTL": "900",
+        "Type": "CNAME"
+      },
+      "Type": "AWS::Route53::RecordSet"
+    },
     "cdnCertificateresume0trentnielsen0me": {
       "DependsOn": "trentlabcloudresumechallenge0resume0trentnielsen0me0Bucket",
       "Properties": {
@@ -279,6 +302,55 @@
       },
       "Type": "AWS::Lambda::Function"
     },
+    "getmethod": {
+      "DependsOn": "function",
+      "Properties": {
+        "AuthorizationType": "NONE",
+        "HttpMethod": "GET",
+        "Integration": {
+          "Credentials": {
+            "Fn::GetAtt": [
+              "LambdaExecutionRole",
+              "Arn"
+            ]
+          },
+          "IntegrationHttpMethod": "POST",
+          "IntegrationResponses": [
+            {
+              "StatusCode": "200"
+            }
+          ],
+          "Type": "AWS",
+          "Uri": {
+            "Fn::Join": [
+              "",
+              [
+                "arn:aws:apigateway:us-east-1:lambda:path/2015-03-31/functions/",
+                {
+                  "Fn::GetAtt": [
+                    "function",
+                    "Arn"
+                  ]
+                },
+                "/invocations"
+              ]
+            ]
+          }
+        },
+        "MethodResponses": [
+          {
+            "StatusCode": "200"
+          }
+        ],
+        "ResourceId": {
+          "Ref": "resource"
+        },
+        "RestApiId": {
+          "Ref": "api"
+        }
+      },
+      "Type": "AWS::ApiGateway::Method"
+    },
     "myDynamoDBTable": {
       "Properties": {
         "AttributeDefinitions": [
@@ -302,6 +374,7 @@
       "Type": "AWS::DynamoDB::Table"
     },
     "optionsmethod": {
+      "DependsOn": "getmethod",
       "Properties": {
         "AuthorizationType": "NONE",
         "HttpMethod": "OPTIONS",
