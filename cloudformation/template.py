@@ -392,7 +392,7 @@ getmethod = t.add_resource(Method(
 # Create an OPTIONS method for the API gateway for CORS
 optionsmethod = t.add_resource(Method(
     "optionsmethod",
-    DependsOn='function',
+    DependsOn='getmethod',
     RestApiId=Ref(rest_api),
     AuthorizationType="NONE",
     ResourceId=Ref(resource),
@@ -438,7 +438,7 @@ optionsmethod = t.add_resource(Method(
 
 deployment = t.add_resource(Deployment(
     "%sDeployment" % stage_name,
-    DependsOn="LambdaMethod",
+    DependsOn="optionsmethod",
     RestApiId=Ref(rest_api),
 ))
 

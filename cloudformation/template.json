@@ -374,7 +374,7 @@
       "Type": "AWS::DynamoDB::Table"
     },
     "optionsmethod": {
-      "DependsOn": "function",
+      "DependsOn": "getmethod",
       "Properties": {
         "AuthorizationType": "NONE",
         "HttpMethod": "OPTIONS",
@@ -548,7 +548,7 @@
       "Type": "AWS::Route53::RecordSet"
     },
     "v1Deployment": {
-      "DependsOn": "LambdaMethod",
+      "DependsOn": "optionsmethod",
       "Properties": {
         "RestApiId": {
           "Ref": "api"
