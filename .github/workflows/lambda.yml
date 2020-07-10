@@ -11,10 +11,10 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@master
-    - run: zip lambda.zip lambda/index.py
+    - run: cd lambda && zip lambda.zip index.py
     - uses: yvesgurcan/deploy-lambda-function@master
       with:
-        package: lambda.zip
+        package: ./lambda/lambda.zip
         function-name: trent-lab-function-17WZBUUQ30VQH
         AWS_REGION: ${{ secrets.AWS_REGION }}
         AWS_SECRET_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
